@@ -1,0 +1,88 @@
+.books-crud {
+    max-width: 400px;
+}
+
+.crud-list-selected {
+    background-color: #93ffff !important;
+}
+
+button {
+    background-color: #0083fd;
+    color: white;
+    border-color: #005bb1;
+    border-radius: 5px;
+    font-weight: bold;
+    height: 25px;
+    cursor: pointer;
+    margin-left: 2px;
+    margin-right: 2px;
+}
+
+.crud-control {
+    width: 100%;
+    direction: rtl;
+    margin-bottom: 10px;
+}
+
+.crud-control > div {
+    direction: ltr;
+    width: calc(84px * 3);
+}
+
+.crud-control button {
+    width: 80px;
+}
+
+.crud-form {
+    margin-bottom: 10px;
+}
+
+.form-field-div {
+    width: 100%;
+    display: flex;
+    margin-bottom: 5px;
+}
+
+.form-field-div label {
+    display: block;
+    width: 80px;
+}
+
+.form-field-div input {
+    width: calc(100% - 80px);
+}
+
+.crud-list {
+    border: 1px solid #989898;
+    margin-bottom: 10px;
+}
+
+.crud-list > div {
+    display: flex;
+    padding: 3px;
+}
+
+.crud-list > :nth-child(odd) {
+    background-color: #d0d0d0;
+}
+
+.crud-nav {
+    width: 100%;
+    display: flex;
+}
+
+.crud-nav > div {
+    display: flex;
+    margin: auto;
+    align-items: center;
+    text-align: center;
+}
+
+.crud-nav > div * {
+    width: 40px;
+    display: block;
+}
+
+.w40 {width: 40%;}
+
+.w60 {width: 60%;}
