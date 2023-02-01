@@ -1,9 +1,9 @@
 
 let id = 0;
 
-function newBook(title, description) {
+function newBook(title, description, author) {
     id++;
-    return {id: '' + id, title, description, bar_code: '' + id}
+    return {id: '' + id, title, description, author, bar_code: '' + id}
 }
 
 const defaultBooks = [];
@@ -11,7 +11,7 @@ const defaultBooks = [];
 for (let i = 1; i <= 30; i++) {
     let bookNumber = i + '';
     bookNumber = (bookNumber.length < 2 ? '0' : '') + bookNumber
-    defaultBooks.push(newBook('Book ' + bookNumber, 'Book\'s ' + bookNumber + ' description'));
+    defaultBooks.push(newBook('Book ' + bookNumber, 'Book\'s ' + bookNumber + ' description', 'Author' + bookNumber));
 }
 
 async function list() {

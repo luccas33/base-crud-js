@@ -33,36 +33,44 @@ button {
     width: 80px;
 }
 
-.crud-form {
-    margin-bottom: 10px;
-}
-
-.form-field-div {
+.crud-form-prop {
     width: 100%;
     display: flex;
     margin-bottom: 5px;
 }
 
-.form-field-div label {
+.crud-form-prop label {
     display: block;
     width: 80px;
 }
 
-.form-field-div input {
+.crud-form-prop input {
     width: calc(100% - 80px);
 }
 
-.crud-list {
+table {
+    width: 100%;
     border: 1px solid #989898;
+    border-collapse: collapse;
     margin-bottom: 10px;
 }
 
-.crud-list > div {
-    display: flex;
+th {
+    background-color: #0084ff;
+    color: white;
+}
+
+th, td {
+    border: 1px solid #989898;
+    border-collapse: collapse;
     padding: 3px;
 }
 
-.crud-list > :nth-child(odd) {
+.crud-th-title {width: 25%}
+.crud-th-author {width: 25%}
+.crud-th-description {width: 50%}
+
+tbody > :nth-child(odd) {
     background-color: #d0d0d0;
 }
 

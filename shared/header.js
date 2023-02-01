@@ -16,7 +16,7 @@ function init(header) {
 
 function renderHeader(header) {
     let main = document.getElementById(header.id);
-    let title = document.createElement('h2');
-    title.innerText = 'Cruder';
+    let title = document.createElement('h1');
+    title.innerText = 'CRUD Generator';
     main.append(title);
 }

@@ -3,30 +3,53 @@ import { newPaginator } from "../util/paginator.js";
 let id = 0;
 
 /**
- * Requireds: list(this), save(dto), remove(dto),
- * listComponent(dto) and formComponent(dto),
- * 
- * Optionals: isValidToSave(dto), isValidToRemove(dto),
- * create(), mainDiv, controlDiv, formDiv, listDiv, 
- * paggerDiv and rowsQtt
+ * Requireds: 
+ * list(this) 
+ * save(dto, this)
+ * remove(dto, this),
+ * fields: {dtoProp: 'Label'}
  * 
  * Call setData(data[]) in your list() to display data
  * 
  * Call confirmSave() when save concluds successfully
  * 
- * Call confirmRemove() where remove concluds successfully
+ * Call confirmRemove() when remove concluds successfully
+ * 
+ * Set rowsQtt to control pagination
+ * Set title to display title
+ * 
+ * Optionals components:
+ * formComponent(dto): html
+ * listHeadComponent(dto): html
+ * listItemComponent(dto): html
+ * 
+ * Optional functions:
+ * isValidToSave(dto): bool
+ * isValidToRemove(dto): bool
+ * create(): dto
+ * 
+ * Optional panels:
+ * mainDiv, titleDiv, controlDiv, formDiv, listDiv,
+ * headListDiv, bodyListDiv, noDataDiv and paggerDiv
+ * 
  */
 export function createCrud(crud) {
     crud = crud || {};
     id++;
     crud.formId = 'crudFormId_' + id;
-    crud.listId = 'crudListId_' + id;
+    crud.bodyListId = 'crudBodyListId_' + id;
     crud.paggerId = 'crudPaggerId_' + id;
-    crud.data = [];
-    crud.displayData = [];
 
-    if (!crud.mainDiv) {
-        crud.mainDiv = document.createElement('div');
+    crud.formComponent = crud.formComponent || defaultFormComponent;
+    crud.listItemComponent = crud.listItemComponent || defaultListItemComponent;
+
+    crud.mainDiv = crud.mainDiv || document.createElement('div');
+
+    if (!crud.titleDiv && crud.title) {
+        let title = document.createElement('h2');
+        title.innerHTML = crud.title;
+        title.className = 'crud-title';
+        crud.mainDiv.append(title);
     }
 
     if (!crud.controlDiv) {
@@ -44,11 +67,26 @@ export function createCrud(crud) {
     crud.formDiv.id = crud.formId;
 
     if (!crud.listDiv) {
-        crud.listDiv = document.createElement('div');
-        crud.listDiv.className = 'crud-list';
+        crud.listDiv = crud.listDiv || document.createElement('table');
+        crud.listDiv.className = 'crud-table';
         crud.mainDiv.append(crud.listDiv);
     }
-    crud.listDiv.id = crud.listId;
+
+    crud.headListDiv = crud.headListDiv || defaultListHeadComponent(crud.fields);
+    crud.listDiv.append(crud.headListDiv);
+
+    if (!crud.bodyListDiv) {
+        crud.bodyListDiv = document.createElement('tbody');
+        crud.listDiv.append(crud.bodyListDiv);
+    }
+    crud.bodyListDiv.id = crud.bodyListId;
+
+    if (!crud.noDataDiv) {
+        crud.noDataDiv = document.createElement('h2');
+        crud.noDataDiv.innerText = 'NO DATA!';
+    }
+
+    createPagger(crud);
 
     crud.renderForm = () => renderForm(crud);
     crud.renderList = () => renderList(crud);
@@ -56,7 +94,6 @@ export function createCrud(crud) {
     crud.init = () => crud.list(crud);
     crud.confirmSave = () => confirmSave(crud);
     crud.confirmRemove = () => confirmRemove(crud);
-    createPagger(crud);
 
     return crud;
 }
@@ -83,20 +120,20 @@ function renderControl(crud) {
     crud.controlDiv.append(main);
     let btnNew = document.createElement('button');
     main.append(btnNew);
-    btnNew.className = 'crud-new-btn';
+    btnNew.className = 'crud-control-btn crud-new-btn';
     btnNew.innerText = 'NEW';
 
     btnNew.addEventListener('click', () => newClick(crud));
 
     let btnSave = document.createElement('button');
     main.append(btnSave);
-    btnSave.className = 'crud-save-btn';
+    btnSave.className = 'crud-control-btn crud-save-btn';
     btnSave.innerText = 'SAVE';
     btnSave.addEventListener('click', () => saveClick(crud));
 
     let btnDelete = document.createElement('button');
     main.append(btnDelete);
-    btnDelete.className = 'crud-remove-btn';
+    btnDelete.className = 'crud-control-btn crud-remove-btn';
     btnDelete.innerText = 'REMOVE';
 
     btnDelete.addEventListener('click', () => removeClick(crud, btnDelete));
@@ -149,16 +186,17 @@ function confirmRemove(crud) {
 }
 
 function renderList(crud) {
-    if (!crud.listComponent || !(crud.listComponent instanceof Function)) {
-        return;
-    }
     let data = crud.displayData;
     if (!Array.isArray(data)) {
         data = [data];
     }
 
-    let main = document.getElementById(crud.listId);
+    let main = document.getElementById(crud.bodyListId);
     main.innerHTML = '';
+
+    if (data.length == 0) {
+        main.append(crud.noDataDiv);
+    }
 
     crud.listSelectionClass = 'crud-list-selected';
 
@@ -166,7 +204,7 @@ function renderList(crud) {
         if (!el) {
             return;
         }
-        let elComponent = crud.listComponent(el);
+        let elComponent = crud.listItemComponent(el, crud.fields);
         if (el == crud.selectedDto) {
             main.childNodes.forEach(c => c.classList.remove(crud.listSelectionClass));
             elComponent.classList.add(crud.listSelectionClass);
@@ -176,18 +214,18 @@ function renderList(crud) {
     });
 }
 
-function listItemClick(crud, dto, listDiv, elementDiv) {
+function listItemClick(crud, dto, bodyListDiv, elementDiv) {
     crud.selectedDto = dto;
     crud.newRegister = false;
     crud.renderForm();
-    listDiv.childNodes.forEach(c => c.classList.remove(crud.listSelectionClass));
+    bodyListDiv.childNodes.forEach(c => c.classList.remove(crud.listSelectionClass));
     elementDiv.classList.add(crud.listSelectionClass);
 }
 
 function renderForm(crud) {
     let formDiv = document.getElementById(crud.formId);
     formDiv.innerHTML = '';
-    formDiv.append(crud.formComponent(crud.selectedDto));
+    formDiv.append(crud.formComponent(crud.selectedDto, crud.fields));
     crud.resetBtnRemove();
 }
 
@@ -239,4 +277,73 @@ function createPagger(crud) {
         crud.displayData = crud.pagger.pageData;
         crud.renderList();
     });
+}
+
+function defaultFormComponent(dto, fields) {
+    dto = dto || {};
+    fields = fields || dto;
+
+    let main = document.createElement('div');
+    main.className = 'crud-form';
+
+    Object.keys(fields).forEach(prop => {
+        let div = document.createElement('div');
+        main.append(div);
+        div.className = 'crud-form-prop crud-form-' + prop;
+        
+        let label = document.createElement('label');
+        div.append(label);
+        label.innerText = fields[prop] || prop;
+        
+        let input = document.createElement('input');
+        div.append(input);
+        input.id = 'crud-input-' + prop;
+        label.htmlFor = input.id;
+        input.value = dto[prop] || '';
+        input.addEventListener('change', () => dto[prop] = input.value);
+        
+    });
+
+    return main;
+}
+
+function defaultListHeadComponent(fields) {
+    fields = fields || {};
+
+    let thead = document.createElement('thead');
+
+    Object.keys(fields).forEach(prop => {
+        if (prop.toLowerCase() == 'id') {
+            return;
+        }
+
+        let th = document.createElement('th');
+        th.className = 'crud-th crud-th-' + prop;
+        thead.append(th);
+
+        let label = document.createElement('label');
+        label.innerText = fields[prop] || prop;
+        th.append(label);
+    });
+
+    return thead;
+}
+
+function defaultListItemComponent(dto, fields) {
+    dto = dto || {};
+    fields = fields || dto;
+
+    let main = document.createElement('tr');
+
+    Object.keys(fields).forEach(prop => {
+        let td = document.createElement('td');
+        td.className = 'crud-td crud-td-' + prop;
+        main.append(td);
+
+        let label = document.createElement('label');
+        label.innerText = dto[prop] || '';
+        td.append(label);
+    });
+
+    return main;
 }
