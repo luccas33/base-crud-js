@@ -15,6 +15,7 @@ export function createBooksPage() {
         remove,
         save,
         isValidToSave,
+        equals,
         title: 'Books CRUD',
         rowsQtt: 10,
         fields: {
@@ -83,4 +84,10 @@ function isValidToSave(book) {
         return false;
     }
     return true;
+}
+
+function equals(book1, book2) {
+    return book1 && book2
+        && (book1.title == book2.title
+            || book1.id == book2.id);
 }

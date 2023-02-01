@@ -27,6 +27,7 @@ let id = 0;
  * isValidToSave(dto): bool
  * isValidToRemove(dto): bool
  * create(): dto
+ * equals(dto, dto): bool
  * 
  * Optional panels:
  * mainDiv, titleDiv, controlDiv, formDiv, listDiv,
@@ -81,10 +82,7 @@ export function createCrud(crud) {
     }
     crud.bodyListDiv.id = crud.bodyListId;
 
-    if (!crud.noDataDiv) {
-        crud.noDataDiv = document.createElement('h2');
-        crud.noDataDiv.innerText = 'NO DATA!';
-    }
+    crud.noDataDiv = crud.noDataDiv || defaultNoDataComponent(crud);
 
     createPagger(crud);
 
@@ -99,20 +97,28 @@ export function createCrud(crud) {
 }
 
 function loadData(crud, data) {
+    data = data || [];
     crud.data = data;
     crud.pagger.setData(data);
     crud.displayData = crud.pagger.pageData;
-    if (!crud.selectedDto) {
-        if (crud.data && crud.data.length > 0) {
-            crud.selectedDto = crud.data[0];
-        } else {
-            crud.selectedDto = crud.create() || {};
-        }
+    if (data.length == 0) {
+        crud.displayData = [];
+        crud.newClick();
+    }
+    if (!crud.selectedDto && crud.data.length > 0) {
+        crud.selectedDto = crud.data[0];
     }
     crud.renderList();
     crud.renderForm();
     let paggerDiv = document.getElementById(crud.paggerId);
     paggerDiv.hidden = crud.pagger.pagesQtt < 2 ? 'hidden' : '';
+    if (crud.selectedDto) {
+        let selectedIndex = crud.data.findIndex(dto => {
+            return crud.selectedDto == dto ||
+                (crud.equals && crud.equals(crud.selectedDto, dto) === true);
+        });
+        crud.pagger.navToIndex(selectedIndex);
+    }
 }
 
 function renderControl(crud) {
@@ -123,20 +129,22 @@ function renderControl(crud) {
     btnNew.className = 'crud-control-btn crud-new-btn';
     btnNew.innerText = 'NEW';
 
-    btnNew.addEventListener('click', () => newClick(crud));
+    crud.newClick = () => newClick(crud);
+    btnNew.addEventListener('click', crud.newClick);
 
     let btnSave = document.createElement('button');
     main.append(btnSave);
     btnSave.className = 'crud-control-btn crud-save-btn';
     btnSave.innerText = 'SAVE';
-    btnSave.addEventListener('click', () => saveClick(crud));
+    crud.saveClick = () => saveClick(crud);
+    btnSave.addEventListener('click', crud.saveClick);
 
     let btnDelete = document.createElement('button');
     main.append(btnDelete);
     btnDelete.className = 'crud-control-btn crud-remove-btn';
     btnDelete.innerText = 'REMOVE';
-
-    btnDelete.addEventListener('click', () => removeClick(crud, btnDelete));
+    crud.removeClick = () => removeClick(crud, btnDelete);
+    btnDelete.addEventListener('click', crud.removeClick);
 
     crud.resetBtnRemove = () => {
         btnDelete.innerText = 'REMOVE';
@@ -205,7 +213,8 @@ function renderList(crud) {
             return;
         }
         let elComponent = crud.listItemComponent(el, crud.fields);
-        if (el == crud.selectedDto) {
+        if (el == crud.selectedDto ||
+            (crud.equals && crud.equals(el, crud.selectedDto) === true)) {
             main.childNodes.forEach(c => c.classList.remove(crud.listSelectionClass));
             elComponent.classList.add(crud.listSelectionClass);
         }
@@ -257,9 +266,20 @@ function createPagger(crud) {
     btnPrevius.innerText = ' < ';
     btnPrevius.className = 'crud-nav-previous-btn';
 
+    let inputPage = document.createElement('input');
+    inputPage.type = 'number';
+    main.append(inputPage);
+    crud.pagger.addOnPageChange(() => inputPage.value = crud.pagger.page);
+    inputPage.addEventListener('change', () => {
+        let pgn = Number.parseInt(inputPage.value);
+        if (pgn > 0) {
+            crud.pagger.navToPage(pgn);
+        }
+    });
+
     let labelPage = document.createElement('label');
     main.append(labelPage);
-    crud.pagger.addOnPageChange(() => labelPage.innerText = `${crud.pagger.page} / ${crud.pagger.pagesQtt}`);
+    crud.pagger.addOnPageChange(() => labelPage.innerText = `/ ${crud.pagger.pagesQtt}`);
 
     let btnNext = document.createElement('button');
     main.append(btnNext);
@@ -290,18 +310,18 @@ function defaultFormComponent(dto, fields) {
         let div = document.createElement('div');
         main.append(div);
         div.className = 'crud-form-prop crud-form-' + prop;
-        
+
         let label = document.createElement('label');
         div.append(label);
         label.innerText = fields[prop] || prop;
-        
+
         let input = document.createElement('input');
         div.append(input);
         input.id = 'crud-input-' + prop;
         label.htmlFor = input.id;
         input.value = dto[prop] || '';
         input.addEventListener('change', () => dto[prop] = input.value);
-        
+
     });
 
     return main;
@@ -346,4 +366,15 @@ function defaultListItemComponent(dto, fields) {
     });
 
     return main;
+}
+
+function defaultNoDataComponent(crud) {
+    let tr = document.createElement('tr');
+    let td = document.createElement('td');
+    tr.append(td);
+    td.colSpan = Object.keys(crud.fields).length;
+    let h3 = document.createElement('h3');
+    h3.innerHTML = 'NO DATA!';
+    td.append(h3);
+    return tr;
 }

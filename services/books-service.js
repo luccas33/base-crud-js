@@ -3,7 +3,7 @@ let id = 0;
 
 function newBook(title, description, author) {
     id++;
-    return {id: '' + id, title, description, author, bar_code: '' + id}
+    return {id: id, title, description, author, bar_code: '' + id}
 }
 
 const defaultBooks = [];
@@ -39,7 +39,6 @@ async function save(book) {
 
 async function remove(book) {
     let books = await list();
-    console.log(books);
     books = books.filter(b => b.id != book.id);
     localStorage.setItem('books', JSON.stringify(books));
     return true;

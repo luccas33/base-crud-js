@@ -57,6 +57,12 @@ export function newPaginator() {
         paginator.onPageChange.forEach(runner => runner());
     }
 
+    paginator.navToIndex = (index) => {
+        index = index < 0 ? 0 : index;
+        let pageNumber = Math.trunc(index / paginator.rowsQtt) + 1;
+        paginator.navToPage(pageNumber);
+    }
+
     paginator.calcPages = () => {
         paginator.rowsQtt = paginator.rowsQtt < 1 ? 10 : paginator.rowsQtt;
         paginator.pagesQtt = Math.trunc(paginator.data.length / paginator.rowsQtt);

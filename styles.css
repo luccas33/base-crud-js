@@ -87,8 +87,19 @@ tbody > :nth-child(odd) {
 }
 
 .crud-nav > div * {
-    width: 40px;
     display: block;
+    margin-left: 2px;
+    margin-right: 2px;
+}
+
+.crud-nav > div > button {
+    width: 40px;
+    height: 25px;
+}
+
+.crud-nav > div > input {
+    width: 32px;
+    height: 19px;
 }
 
 .w40 {width: 40%;}
