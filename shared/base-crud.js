@@ -9,12 +9,20 @@ let id = 0;
  * remove(dto, this),
  * 
  * Required if you don't provide CRUD's HTML:
- * fields: {dtoProp: 'Label' | { label: string, 
- *                               input(): html, 
- *                               get(input, dto, prop), 
- *                               set(input, dto, prop),
- *                               listCell(dto, prop)?: html,
- *                               className?: string } }
+ * fields: {dtoProp: 'Label' | fieldInfo, ... dtoProp }
+ * fieldInfo:
+ * {
+ *     label: string,
+ *     input(): html,
+ *     get(input, dto, prop),
+ *     set(input, dto, prop),
+ *     listCell(dto, prop)?: html,
+ *     className?: string,
+ *     formGroup?: string,
+ *     formOrder?: number,
+ *     listOrder?: number,
+ *     showInList?: bool
+ * }
  * 
  * Call setData(data[]) in your list() to display data
  * 
@@ -47,6 +55,8 @@ export function createCrud(crud) {
     crud.formId = 'crudFormId_' + id;
     crud.bodyListId = 'crudBodyListId_' + id;
     crud.paggerId = 'crudPaggerId_' + id;
+
+    processFields(crud);
 
     crud.formComponent = crud.formComponent || defaultFormComponent;
     crud.listItemComponent = crud.listItemComponent || defaultListItemComponent;
@@ -241,7 +251,7 @@ function listItemClick(crud, dto, bodyListDiv, elementDiv) {
 function renderForm(crud) {
     let formDiv = document.getElementById(crud.formId);
     formDiv.innerHTML = '';
-    formDiv.append(crud.formComponent(crud.selectedDto, crud.fields));
+    formDiv.append(crud.formComponent(crud.selectedDto, crud));
     crud.resetBtnRemove();
 }
 
@@ -306,18 +316,31 @@ function createPagger(crud) {
     });
 }
 
-function defaultFormComponent(dto, fields) {
+function defaultFormComponent(dto, crud) {
     dto = dto || {};
-    fields = fields || dto;
+    crud.fields = crud.fields || [];
+    crud.fields = crud.fields.sort(f => f.formOrder);
 
     let main = document.createElement('div');
-    main.className = 'crud-form';
 
-    Object.keys(fields).forEach(prop => {
-        let info = getFormInputInfo(fields, prop);
+    let groupDivs = [{ name: '', div: main }];
+    crud.fields.forEach(info => {
+        if (groupDivs.find(g => g.name == info.formGroup)) {
+            return;
+        }
+        let div = document.createElement('div');;
+        div.className = 'crud-form-group-' + info.formGroup;
+        groupDivs.push({ name: info.formGroup, div });
+    });
+
+    crud.fields.forEach(info => {
+        let groupDiv = groupDivs.find(g => g.name == info.formGroup).div;
+        if (info.formGroup != '') {
+            main.append(groupDiv);
+        }
 
         let div = document.createElement('div');
-        main.append(div);
+        groupDiv.append(div);
         div.className = info.className;
 
         let label = document.createElement('label');
@@ -326,26 +349,36 @@ function defaultFormComponent(dto, fields) {
 
         let input = info.input();
         div.append(input);
-        input.id = 'crud-input-' + prop;
+        input.id = 'crud-input-' + info.prop;
         label.htmlFor = input.id;
 
         try {
-            info.set(input, dto, prop);
-        } catch(err) {
-            console.log('Error setting value of ' + prop + ': ', err);
+            info.set(input, dto, info.prop);
+        } catch (err) {
+            console.log('Error setting value of ' + info.prop + ': ', err);
         }
-        input.addEventListener('change', () => info.get(input, dto, prop));
+        input.addEventListener('change', () => info.get(input, dto, info.prop));
     });
 
     return main;
 }
 
-function getFormInputInfo(fields, prop) {
+function processFields(crud) {
+    if (!crud.fields) {
+        return;
+    }
+    let infos = [];
+    Object.keys(crud.fields).forEach(prop => infos.push(getFieldInfo(crud.fields, prop)));
+    crud.fields = infos;
+}
+
+function getFieldInfo(fields, prop) {
     let info = fields[prop];
     info = info || {};
     if (typeof info == 'string') {
         info = { label: info };
     }
+    info.prop = prop;
     info.label = info.label || prop;
     if (!info.input || !(info.input instanceof Function)) {
         info.input = () => document.createElement('input');
@@ -356,60 +389,6 @@ function getFormInputInfo(fields, prop) {
     if (!info.set || !(info.set instanceof Function)) {
         info.set = (input, dto, prop) => input.value = dto[prop];
     }
-    info.className = info.className || '';
-    info.className += ' crud-form-prop crud-form-' + prop;
-    return info;
-}
-
-function defaultListHeadComponent(fields) {
-    fields = fields || {};
-
-    let thead = document.createElement('thead');
-
-    Object.keys(fields).forEach(prop => {
-        let value = fields[prop] || prop;
-        if (typeof value != 'string') {
-            value = value.label;
-        }
-
-        let th = document.createElement('th');
-        th.className = 'crud-th crud-th-' + prop;
-        thead.append(th);
-
-        let label = document.createElement('label');
-        label.innerText = value;
-        th.append(label);
-    });
-
-    return thead;
-}
-
-function defaultListItemComponent(dto, fields) {
-    dto = dto || {};
-    fields = fields || dto;
-
-    let main = document.createElement('tr');
-
-    Object.keys(fields).forEach(prop => {
-        let info = getListCellInfo(fields, prop);
-
-        let td = document.createElement('td');
-        td.className = 'crud-td crud-td-' + prop;
-        main.append(td);
-
-        let label = document.createElement('label');
-        label.innerText = dto[prop] || '';
-        td.append(info.listCell(dto, prop));
-    });
-
-    return main;
-}
-
-function getListCellInfo(fields, prop) {
-    let info = fields[prop];
-    if (!info || typeof info == 'string') {
-        info = {};
-    }
     if (!info.listCell || !(info.listCell instanceof Function)) {
         info.listCell = (dto, prop) => {
             let lb = document.createElement('label');
@@ -417,7 +396,53 @@ function getListCellInfo(fields, prop) {
             return lb;
         };
     }
+    info.className = info.className || '';
+    info.className += ' crud-form-prop crud-form-' + prop;
+    info.formOrder = info.formOrder || 0;
+    info.listOrder = info.listOrder || 0;
+    info.showInList = info.showInList === false ? false : true;
+    info.formGroup = info.formGroup || '';
     return info;
+}
+
+function defaultListHeadComponent(fields) {
+    fields = fields || [];
+    fields = fields.filter(f => f.showInList);
+    fields.sort(f => f.listOrder);
+
+    let thead = document.createElement('thead');
+
+    fields.forEach(info => {
+        let th = document.createElement('th');
+        th.className = 'crud-th crud-th-' + info.prop;
+        thead.append(th);
+
+        let label = document.createElement('label');
+        label.innerText = info.label;
+        th.append(label);
+    });
+
+    return thead;
+}
+
+function defaultListItemComponent(dto, fields) {
+    fields = fields || [];
+    fields = fields.filter(f => f.showInList);
+    fields.sort(f => f.listOrder);
+
+    let main = document.createElement('tr');
+
+    fields.forEach(info => {
+        let td = document.createElement('td');
+        td.className = 'crud-td crud-td-' + info.prop;
+        main.append(td);
+
+        let label = document.createElement('label');
+        label.innerText = dto[info.prop] || '';
+        td.append(info.listCell(dto, info.prop));
+    });
+
+    return main;
 }
 
 function defaultNoDataComponent(crud) {

@@ -49,6 +49,16 @@ button {
     width: calc(100% - 80px);
 }
 
+.crud-form-group-author-category {
+    display: flex;
+}
+
+.crud-form-author {width: 60%}
+.crud-form-category {
+    width: 40%;
+    padding-left: 10px;
+}
+
 table {
     width: 100%;
     border: 1px solid #989898;
@@ -67,10 +77,9 @@ th, td {
     padding: 3px;
 }
 
-.crud-th-title {width: 20%}
-.crud-th-author {width: 20%}
-.crud-th-category {width: 20%}
-.crud-th-description {width: 40%}
+.crud-th-title {width: 40%}
+.crud-th-author {width: 30%}
+.crud-th-category {width: 30%}
 
 tbody > :nth-child(odd) {
     background-color: #d0d0d0;

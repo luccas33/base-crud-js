@@ -19,12 +19,21 @@ export function createBooksPage() {
         title: 'Books CRUD',
         rowsQtt: 10,
         fields: {
-            title: 'Title',
-            author: 'Author',
-            category: fieldCategory(),
-            description: 'Description'
+            title: { label: 'Title', formOrder: 0, listOrder: 0 },
+            author: { label: 'Author', formOrder: 1, listOrder: 1, formGroup: 'author-category' },
+            category: {
+                label: 'Category',
+                formOrder: 2,
+                listOrder: 2,
+                formGroup: 'author-category',
+                input: inputCategory,
+                get: getCategory,
+                set: setCategory
+            },
+            description: { label: 'Description', formOrder: 3, showInList: false }
         }
     });
+
     page.mainDiv.append(crud.mainDiv);
     crud.mainDiv.className = 'books-crud';
 
@@ -102,27 +111,24 @@ function equals(book1, book2) {
             || book1.id == book2.id);
 }
 
-function fieldCategory() {
-    let info = {};
-    info.label = 'Category';
-    info.input = () => {
-        let select = document.createElement('select');
-        booksService.categories.forEach(cat => {
-            let option = document.createElement('option');
-            option.value = cat;
-            option.innerText = cat;
-            select.append(option);
-        });
-        return select;
-    };
-    info.get = (select, dto, prop) => {
-        let option = select.options[select.selectedIndex];
-        if (option) {
-            dto[prop] = option.value;
-        }
+function inputCategory() {
+    let select = document.createElement('select');
+    booksService.categories.forEach(cat => {
+        let option = document.createElement('option');
+        option.value = cat;
+        option.innerText = cat;
+        select.append(option);
+    });
+    return select;
+}
+
+function getCategory(select, dto, prop) {
+    let option = select.options[select.selectedIndex];
+    if (option) {
+        dto[prop] = option.value;
     }
-    info.set = (select, dto, prop) => {
-        select.selectedIndex = booksService.categories.findIndex(v => v == dto[prop]);
-    }
-    return info;
+}
+
+function setCategory(select, dto, prop) {
+    select.selectedIndex = booksService.categories.findIndex(v => v == dto[prop]);
 }
