@@ -1,5 +1,6 @@
 .books-crud {
-    max-width: 400px;
+    max-width: 500px;
+    margin: 5px;
 }
 
 .crud-list-selected {
@@ -44,7 +45,7 @@ button {
     width: 80px;
 }
 
-.crud-form-prop input {
+.crud-form-prop input, select {
     width: calc(100% - 80px);
 }
 
@@ -66,9 +67,10 @@ th, td {
     padding: 3px;
 }
 
-.crud-th-title {width: 25%}
-.crud-th-author {width: 25%}
-.crud-th-description {width: 50%}
+.crud-th-title {width: 20%}
+.crud-th-author {width: 20%}
+.crud-th-category {width: 20%}
+.crud-th-description {width: 40%}
 
 tbody > :nth-child(odd) {
     background-color: #d0d0d0;

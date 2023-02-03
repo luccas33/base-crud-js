@@ -1,9 +1,23 @@
 
 let id = 0;
+let categoryNumber = -1;
+
+const categories = [];
+for (let i = 1; i <= 5; i++) {
+    categories.push('Category ' + i);
+}
 
 function newBook(title, description, author) {
     id++;
-    return {id: id, title, description, author, bar_code: '' + id}
+    categoryNumber++;
+    if (categoryNumber > 4) {
+        categoryNumber = 0;
+    }
+    return {id: id, 
+        title, 
+        description, 
+        author, 
+        category: categories[categoryNumber]};
 }
 
 const defaultBooks = [];
@@ -44,4 +58,4 @@ async function remove(book) {
     return true;
 }
 
-export const booksService = {list, save, remove};
+export const booksService = {list, save, remove, categories};

@@ -7,7 +7,14 @@ let id = 0;
  * list(this) 
  * save(dto, this)
  * remove(dto, this),
- * fields: {dtoProp: 'Label'}
+ * 
+ * Required if you don't provide CRUD's HTML:
+ * fields: {dtoProp: 'Label' | { label: string, 
+ *                               input(): html, 
+ *                               get(input, dto, prop), 
+ *                               set(input, dto, prop),
+ *                               listCell(dto, prop)?: html,
+ *                               className?: string } }
  * 
  * Call setData(data[]) in your list() to display data
  * 
@@ -307,24 +314,51 @@ function defaultFormComponent(dto, fields) {
     main.className = 'crud-form';
 
     Object.keys(fields).forEach(prop => {
+        let info = getFormInputInfo(fields, prop);
+
         let div = document.createElement('div');
         main.append(div);
-        div.className = 'crud-form-prop crud-form-' + prop;
+        div.className = info.className;
 
         let label = document.createElement('label');
         div.append(label);
-        label.innerText = fields[prop] || prop;
+        label.innerText = info.label;
 
-        let input = document.createElement('input');
+        let input = info.input();
         div.append(input);
         input.id = 'crud-input-' + prop;
         label.htmlFor = input.id;
-        input.value = dto[prop] || '';
-        input.addEventListener('change', () => dto[prop] = input.value);
 
+        try {
+            info.set(input, dto, prop);
+        } catch(err) {
+            console.log('Error setting value of ' + prop + ': ', err);
+        }
+        input.addEventListener('change', () => info.get(input, dto, prop));
     });
 
     return main;
+}
+
+function getFormInputInfo(fields, prop) {
+    let info = fields[prop];
+    info = info || {};
+    if (typeof info == 'string') {
+        info = { label: info };
+    }
+    info.label = info.label || prop;
+    if (!info.input || !(info.input instanceof Function)) {
+        info.input = () => document.createElement('input');
+    }
+    if (!info.get || !(info.set instanceof Function)) {
+        info.get = (input, dto, prop) => dto[prop] = input.value;
+    }
+    if (!info.set || !(info.set instanceof Function)) {
+        info.set = (input, dto, prop) => input.value = dto[prop];
+    }
+    info.className = info.className || '';
+    info.className += ' crud-form-prop crud-form-' + prop;
+    return info;
 }
 
 function defaultListHeadComponent(fields) {
@@ -333,8 +367,9 @@ function defaultListHeadComponent(fields) {
     let thead = document.createElement('thead');
 
     Object.keys(fields).forEach(prop => {
-        if (prop.toLowerCase() == 'id') {
-            return;
+        let value = fields[prop] || prop;
+        if (typeof value != 'string') {
+            value = value.label;
         }
 
         let th = document.createElement('th');
@@ -342,7 +377,7 @@ function defaultListHeadComponent(fields) {
         thead.append(th);
 
         let label = document.createElement('label');
-        label.innerText = fields[prop] || prop;
+        label.innerText = value;
         th.append(label);
     });
 
@@ -356,16 +391,33 @@ function defaultListItemComponent(dto, fields) {
     let main = document.createElement('tr');
 
     Object.keys(fields).forEach(prop => {
+        let info = getListCellInfo(fields, prop);
+
         let td = document.createElement('td');
         td.className = 'crud-td crud-td-' + prop;
         main.append(td);
 
         let label = document.createElement('label');
         label.innerText = dto[prop] || '';
-        td.append(label);
+        td.append(info.listCell(dto, prop));
     });
 
     return main;
+}
+
+function getListCellInfo(fields, prop) {
+    let info = fields[prop];
+    if (!info || typeof info == 'string') {
+        info = {};
+    }
+    if (!info.listCell || !(info.listCell instanceof Function)) {
+        info.listCell = (dto, prop) => {
+            let lb = document.createElement('label');
+            lb.innerText = dto[prop] || '';
+            return lb;
+        };
+    }
+    return info;
 }
 
 function defaultNoDataComponent(crud) {

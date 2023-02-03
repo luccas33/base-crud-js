@@ -21,6 +21,7 @@ export function createBooksPage() {
         fields: {
             title: 'Title',
             author: 'Author',
+            category: fieldCategory(),
             description: 'Description'
         }
     });
@@ -67,7 +68,8 @@ function remove(book, crud) {
 function create() {
     return {
         title: '',
-        description: ''
+        description: '',
+        author: ''
     }
 }
 
@@ -77,6 +79,14 @@ function isValidToSave(book) {
     }
     if (!book.title || !book.title.trim().lenght == 0) {
         alert('Title can\'t be blank');
+        return false;
+    }
+    if (!book.author || !book.author.trim().lenght == 0) {
+        alert('Author can\'t be blank');
+        return false;
+    }
+    if (!book.category || book.category == '') {
+        alert('Select category');
         return false;
     }
     if (!book.description || !book.description.trim().lenght == 0) {
@@ -90,4 +100,29 @@ function equals(book1, book2) {
     return book1 && book2
         && (book1.title == book2.title
             || book1.id == book2.id);
+}
+
+function fieldCategory() {
+    let info = {};
+    info.label = 'Category';
+    info.input = () => {
+        let select = document.createElement('select');
+        booksService.categories.forEach(cat => {
+            let option = document.createElement('option');
+            option.value = cat;
+            option.innerText = cat;
+            select.append(option);
+        });
+        return select;
+    };
+    info.get = (select, dto, prop) => {
+        let option = select.options[select.selectedIndex];
+        if (option) {
+            dto[prop] = option.value;
+        }
+    }
+    info.set = (select, dto, prop) => {
+        select.selectedIndex = booksService.categories.findIndex(v => v == dto[prop]);
+    }
+    return info;
 }
